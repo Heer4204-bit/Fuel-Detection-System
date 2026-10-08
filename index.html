@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>AI-Powered Fuel Theft & Adulteration Detection System ⛽</title>  
+    <!-- FontAwesome for Icons -->  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  
+    <!-- Chart.js for Graphs -->  
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+
+<!-- PDF Generator -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Excel XLSX Generator -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
+    <style>  
+        :root {  
+            --bg-color: #0f172a;  
+            --card-bg: #1e293b;  
+            --text-color: #f8fafc;  
+            --text-muted: #94a3b8;  
+            --primary: #3b82f6;  
+            --success: #10b981;  
+            --warning: #f59e0b;  
+            --danger: #ef4444;  
+            --border-color: #334155;  
+        }  * {  
+        box-sizing: border-box;  
+        margin: 0;  
+        padding: 0;  
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
+    }  
+
+    body {  
+        background-color: var(--bg-color);  
+        color: var(--text-color);  
+        padding: 20px;  
+    }  
+
+    header {  
+        display: flex;  
+        justify-content: space-between;  
+        align-items: center;  
+        padding-bottom: 20px;  
+        border-bottom: 1px solid var(--border-color);  
+        margin-bottom: 20px;  
+    }  
+
+    header h1 {  
+        font-size: 1.8rem;  
+        display: flex;  
+        align-items: center;  
+        gap: 10px;  
+    }  
+
+    .status-badge {  
+        background-color: rgba(16, 185, 129, 0.2);  
+        color: var(--success);  
+        padding: 6px 12px;  
+        border-radius: 20px;  
+        font-size: 0.85rem;  
+        display: flex;  
+        align-items: center;  
+        gap: 6px;  
+    }  
+
+    .status-badge .dot {  
+        width: 8px;  
+        height: 8px;  
+        background-color: var(--success);  
+        border-radius: 50%;  
+        display: inline-block;  
+    }  
+
+    /* Metrics Summary Bar */  
+    .metrics-grid {  
+        display: grid;  
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));  
+        gap: 15px;  
+        margin-bottom: 25px;  
+    }  
+
+    .metric-card {  
+        background: var(--card-bg);  
+        padding: 15px 20px;  
+        border-radius: 10px;  
+        border: 1px solid var(--border-color);  
+        display: flex;  
+        align-items: center;  
+        justify-content: space-between;  
+    }  
+
+    .metric-card .info h3 {  
+        font-size: 0.85rem;  
+        color: var(--text-muted);  
+        margin-bottom: 5px;  
+    }  
+
+    .metric-card .info p {  
+        font-size: 1.6rem;  
+        font-weight: bold;  
+    }  
+
+    .metric-card .icon {  
+        font-size: 2rem;  
+        opacity: 0.8;  
+    }  
+
+    /* Section Layout */  
+    .dashboard-grid {  
+        display: grid;  
+        grid-template-columns: 2fr 1fr;  
+        gap: 20px;  
+        margin-bottom: 25px;  
+    }  
+
+    @media (max-width: 1024px) {  
+        .dashboard-grid {  
+            grid-template-columns: 1fr;  
+        }  
+    }  
+
+    .card {  
+        background: var(--card-bg);  
+        border-radius: 10px;  
+        padding: 20px;  
+        border: 1px solid var(--border-color);  
+        margin-bottom: 20px;  
+    }  
+
+    .card h2 {  
+        font-size: 1.2rem;  
+        margin-bottom: 15px;  
+        display: flex;  
+        align-items: center;  
+        gap: 10px;  
+        border-bottom: 1px solid var(--border-color);  
+        padding-bottom: 10px;  
+    }  
+
+    /* Tables */  
+    table {  
+        width: 100%;  
+        border-collapse: collapse;  
+        text-align: left;  
+        font-size: 0.9rem;  
+    }  
+
+    th, td {  
+        padding: 12px;  
+        border-bottom: 1px solid var(--border-color);  
+    }  
+
+    th {  
+        color: var(--text-muted);  
+        font-weight: 600;  
+    }  
+
+    .tag {  
+        padding: 4px 8px;  
+        border-radius: 4px;  
+        font-size: 0.75rem;  
+        font-weight: bold;  
+    }  
+
+    .tag.normal { background: rgba(16, 185, 129, 0.2); color: var(--success); }  
+    .tag.suspicious { background: rgba(245, 158, 11, 0.2); color: var(--warning); }  
+    .tag.alert { background: rgba(239, 68, 68, 0.2); color: var(--danger); }  
+
+    /* Progress Bar */  
+    .progress-bar {  
+        width: 100%;  
+        background-color: var(--border-color);  
+        border-radius: 10px;  
+        height: 8px;  
+        overflow: hidden;  
+        margin-top: 5px;  
+    }  
+
+    .progress-fill {  
+        height: 100%;  
+        background-color: var(--primary);  
+    }  
+
+    /* Alert Feed */  
+    .alert-item {  
+        display: flex;  
+        align-items: flex-start;  
+        gap: 12px;  
+        padding: 10px 0;  
+        border-bottom: 1px solid var(--border-color);  
+    }  
+
+    .alert-item:last-child {  
+        border-bottom: none;  
+    }  
+
+    .alert-item i {  
+        font-size: 1.2rem;  
+        margin-top: 3px;  
+    }  
+
+    .alert-details h4 {  
+        font-size: 0.9rem;  
+    }  
+
+    .alert-details p {  
+        font-size: 0.8rem;  
+        color: var(--text-muted);  
+    }  
+
+    /* System Features Grid */  
+    .features-grid {  
+        display: grid;  
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));  
+        gap: 15px;  
+    }  
+
+    .feature-card {  
+        background: var(--card-bg);  
+        border: 1px solid var(--border-color);  
+        padding: 15px;  
+        border-radius: 8px;  
+    }  
+
+    .feature-card h3 {  
+        font-size: 1rem;  
+        margin-bottom: 8px;  
+        color: var(--primary);  
+        display: flex;  
+        align-items: center;  
+        gap: 8px;  
+    }  
+
+    .feature-card p {  
+        font-size: 0.85rem;  
+        color: var(--text-muted);  
+        line-height: 1.4;  
+    }  
+</style>
+
+</head>  
+<body>  <!-- Header Section -->  
+<header>  
+    <h1><i class="fa-solid fa-gas-pump" style="color: var(--primary);"></i> AI-Powered Fuel Theft & Adulteration Detection</h1>  
+    <div class="status-badge">  
+        <span class="dot"></span> AI Engine Active & Monitoring  
+    </div>  
+</header>  
+
+<!-- 📈 Command Dashboard: Key Metrics -->  
+<div class="metrics-grid">  
+    <div class="metric-card">  
+        <div class="info">  
+            <h3>✅ Normal Vehicles</h3>  
+            <p style="color: var(--success);">150</p>  
+        </div>  
+        <i class="fa-solid fa-truck-front icon" style="color: var(--success);"></i>  
+    </div>  
+    <div class="metric-card">  
+        <div class="info">  
+            <h3>⚠️ Suspicious Vehicles</h3>  
+            <p style="color: var(--warning);">5</p>  
+        </div>  
+        <i class="fa-solid fa-triangle-exclamation icon" style="color: var(--warning);"></i>  
+    </div>  
+    <div class="metric-card">  
+        <div class="info">  
+            <h3>🔴 Active Theft Alerts</h3>  
+            <p style="color: var(--danger);">2</p>  
+        </div>  
+        <i class="fa-solid fa-bell icon" style="color: var(--danger);"></i>  
+    </div>  
+    <div class="metric-card">  
+        <div class="info">  
+            <h3>🧪 Adulteration Risk</h3>  
+            <p style="color: var(--warning);">Medium (8%)</p>  
+        </div>  
+        <i class="fa-solid fa-vial icon" style="color: var(--warning);"></i>  
+    </div>  
+</div>  
+
+<!-- Main Dashboard Section -->  
+<div class="dashboard-grid">  
+      
+    <!-- Left Side: Active Vehicle Fleet Status & Graph -->  
+    <div>  
+        <!-- Consumption Graph -->  
+        <div class="card">  
+            <h2>📊 Consumption Graphs & AI Anomaly Detection</h2>  
+            <canvas id="consumptionChart" height="100"></canvas>  
+        </div>  
+
+        <!-- Active Fleet Monitoring Table -->  
+        <div class="card">  
+            <h2>📍 Active Fleet Monitoring & Current Levels</h2>  
+            <table>  
+                <thead>  
+                    <tr>  
+                        <th>Vehicle ID</th>  
+                        <th>Location</th>  
+                        <th>Fuel Level</th>  
+                        <th>Adulteration Risk</th>  
+                        <th>Status</th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+                    <tr>  
+                        <td><strong>Truck #101</strong></td>  
+                        <td>📍 Route 66 (Geofence: Sector A)</td>  
+                        <td>  
+                            78% (156L)  
+                            <div class="progress-bar"><div class="progress-fill" style="width: 78%;"></div></div>  
+                        </td>  
+                        <td>0% (Clean)</td>  
+                        <td><span class="tag normal">Normal</span></td>  
+                    </tr>  
+                    <tr>  
+                        <td><strong>Truck #104</strong></td>  
+                        <td>📍 Highway 4 (Geofence: Sector B)</td>  
+                        <td>  
+                            32% (64L)  
+                            <div class="progress-bar"><div class="progress-fill" style="width: 32%; background-color: var(--warning);"></div></div>  
+                        </td>  
+                        <td><strong style="color: var(--warning);">18% High Viscosity</strong></td>  
+                        <td><span class="tag suspicious">Suspicious</span></td>  
+                    </tr>  
+                    <tr>  
+                        <td><strong>Truck #109</strong></td>  
+                        <td>📍 Off-Route Stop (Unauthorized)</td>  
+                        <td>  
+                            12% Rapid Drop 📉  
+                            <div class="progress-bar"><div class="progress-fill" style="width: 12%; background-color: var(--danger);"></div></div>  
+                        </td>  
+                        <td>0% (Clean)</td>  
+                        <td><span class="tag alert">Theft Alert</span></td>  
+                    </tr>  
+                </tbody>  
+            </table>  
+        </div>  
+    </div>  
+
+    <!-- Right Side: Real-Time Alerts & Incident History -->  
+    <div>  
+        <!-- Active Alerts -->  
+        <div class="card">  
+            <h2>📱 Real-Time Alerts & Incident History</h2>  
+              
+            <div class="alert-item">  
+                <i class="fa-solid fa-skull-crossbones" style="color: var(--danger);"></i>  
+                <div class="alert-details">  
+                    <h4>Fuel Theft Detected!</h4>  
+                    <p><strong>Truck #109:</strong> Sudden drop of 40L detected while stationary.</p>  
+                    <p><small>2 mins ago • GPS: 34.052, -118.243</small></p>  
+                </div>  
+            </div>  
+
+            <div class="alert-item">  
+                <i class="fa-solid fa-flask-vial" style="color: var(--warning);"></i>  
+                <div class="alert-details">  
+                    <h4>Fuel Adulteration Warning</h4>  
+                    <p><strong>Truck #104:</strong> Fuel density sensor anomaly detected post-refuel.</p>  
+                    <p><small>14 mins ago • Refuel Station B</small></p>  
+                </div>  
+            </div>  
+
+            <div class="alert-item">  
+                <i class="fa-solid fa-map-location-dot" style="color: var(--warning);"></i>  
+                <div class="alert-details">  
+                    <h4>Geofence Breach</h4>  
+                    <p><strong>Truck #109:</strong> Left designated route without authorization.</p>  
+                    <p><small>25 mins ago</small></p>  
+                </div>  
+            </div>  
+        </div>  
+
+        <!-- Quick Audit & Controls -->  
+        <div class="card">  
+            <h2>🔐 Security & Audit Tools</h2>  
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Generate encrypted log reports for compliance and auditing.</p>  
+            <button
+    id="exportAuditBtn"
+    type="button"
+    style="
+        width: 100%;
+        padding: 12px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-bottom: 8px;
+        transition: 0.2s;
+    "
+    onmouseover="this.style.opacity='0.85'"
+    onmouseout="this.style.opacity='1'"
+>
+    <i class="fa-solid fa-file-export"></i>
+    Export Automated Audit Report (PDF/XLS)
+</button>
+
+<p id="exportStatus"
+   style="
+       display:none;
+       margin-top:8px;
+       font-size:0.8rem;
+       color:var(--success);
+       text-align:center;
+   ">
+</p> 
+        </div>  
+    </div>  
+</div>  
+
+<!-- System Core Features Section -->  
+<div class="card">  
+    <h2>🛠 System Features Overview</h2>  
+    <div class="features-grid">  
+        <div class="feature-card">  
+            <h3>🔍 Real-Time Fuel Level Monitoring</h3>  
+            <p>Continuous ultrasonic sensor tracking providing precise volume measurements down to 0.1 liters.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>🚨 Fuel Theft Detection</h3>  
+            <p>Instant detection of sudden fuel drops, siphon attempts, or unauthorized drain valve openings.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>📊 AI Consumption Analysis</h3>  
+            <p>Machine learning models compare fuel usage against mileage, load weight, terrain, and traffic.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>🧪 Fuel Adulteration Detection</h3>  
+            <p>Optical and density sensors detect foreign liquids, solvents, or water mixing during refuel events.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>🧠 AI Anomaly Detection</h3>  
+            <p>Predictive engine detects fraudulent behavior, sensor tampering, and suspicious idling patterns.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>📍 GPS & Geofencing</h3>  
+            <p>Correlates refueling/drain events with permitted refueling zones and authorized transit routes.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>📱 Real-Time Alerts</h3>  
+            <p>Instant push notifications sent via SMS, WhatsApp, and Webhooks directly to fleet managers.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>🧾 Automated Reports</h3>  
+            <p>Schedule daily, weekly, or monthly fuel efficiency and loss incident compliance reports automatically.</p>  
+        </div>  
+        <div class="feature-card">  
+            <h3>🔐 Security & Audit</h3>  
+            <p>Tamper-proof blockchain/cryptographic ledger logging to ensure unalterable audit trails.</p>  
+        </div>  
+    </div>  
+</div>  
+
+<!-- Chart JavaScript Logic -->  
+<script>  
+    const ctx = document.getElementById('consumptionChart').getContext('2d');  
+    const consumptionChart = new Chart(ctx, {  
+        type: 'line',  
+        data: {  
+            labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],  
+            datasets: [  
+                {  
+                    label: 'Expected AI Baseline (L/h)',  
+                    data: [15, 14, 25, 40, 38, 42, 30, 18],  
+                    borderColor: '#3b82f6',  
+                    borderDash: [5, 5],  
+                    fill: false,  
+                    tension: 0.3  
+                },  
+                {  
+                    label: 'Actual Fuel Consumption (L/h)',  
+                    data: [15, 14, 26, 39, 85, 41, 31, 17], // Spikes at 12:00 indicate theft/anomaly  
+                    borderColor: '#ef4444',  
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',  
+                    fill: true,  
+                    tension: 0.1  
+                }  
+            ]  
+        },  
+        options: {  
+            responsive: true,  
+            plugins: {  
+                legend: {  
+                    labels: { color: '#f8fafc' }  
+                },  
+                tooltip: {  
+                    callbacks: {  
+                        afterBody: function(context) {  
+                            if (context[0].dataIndex === 4) {  
+                                return '🚨 AI ANOMALY DETECTED: Sudden 45L drop without movement!';  
+                            }  
+                        }  
+                    }  
+                }  
+            },  
+            scales: {  
+                x: {  
+                    ticks: { color: '#94a3b8' },  
+                    grid: { color: '#334155' }  
+                },  
+                y: {  
+                    ticks: { color: '#94a3b8' },  
+                    grid: { color: '#334155' }  
+                }  
+            }  
+        }  
+    });  
+</script>
+
+<script>
+/* =========================================================
+   AI FUEL SECURITY SYSTEM
+   AUTOMATED AUDIT REPORT EXPORT ENGINE
+   PDF + XLSX
+   ========================================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const exportButton = document.getElementById("exportAuditBtn");
+    const exportStatus = document.getElementById("exportStatus");
+
+    if (!exportButton) {
+        console.error("Export button not found.");
+        return;
+    }
+
+    exportButton.addEventListener("click", async function () {
+
+        try {
+
+            exportButton.disabled = true;
+            exportButton.innerHTML =
+                '<i class="fa-solid fa-spinner fa-spin"></i> Generating Reports...';
+
+            exportStatus.style.display = "block";
+            exportStatus.style.color = "var(--warning)";
+            exportStatus.textContent =
+                "Preparing PDF and Excel audit reports...";
+
+            /* =====================================================
+               REPORT DATA
+               ===================================================== */
+
+            const reportDate = new Date();
+
+            const reportID =
+                "AUDIT-" +
+                reportDate.getFullYear() +
+                String(reportDate.getMonth() + 1).padStart(2, "0") +
+                String(reportDate.getDate()).padStart(2, "0") +
+                "-" +
+                String(reportDate.getHours()).padStart(2, "0") +
+                String(reportDate.getMinutes()).padStart(2, "0");
+
+            const vehicles = [
+                {
+                    vehicle: "Truck #101",
+                    location: "Route 66 - Sector A",
+                    fuelLevel: "78%",
+                    fuelLiters: 156,
+                    adulteration: "0% - Clean",
+                    status: "Normal"
+                },
+                {
+                    vehicle: "Truck #104",
+                    location: "Highway 4 - Sector B",
+                    fuelLevel: "32%",
+                    fuelLiters: 64,
+                    adulteration: "18% - High Viscosity",
+                    status: "Suspicious"
+                },
+                {
+                    vehicle: "Truck #109",
+                    location: "Off-Route Stop - Unauthorized",
+                    fuelLevel: "12%",
+                    fuelLiters: 24,
+                    adulteration: "0% - Clean",
+                    status: "Theft Alert"
+                }
+            ];
+
+            const incidents = [
+                {
+                    type: "Fuel Theft",
+                    vehicle: "Truck #109",
+                    description:
+                        "Sudden 40L fuel drop detected while vehicle was stationary.",
+                    severity: "Critical",
+                    time: "2 mins ago"
+                },
+                {
+                    type: "Fuel Adulteration",
+                    vehicle: "Truck #104",
+                  
